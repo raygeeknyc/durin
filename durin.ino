@@ -6,21 +6,28 @@
  <http://creativecommons.org/publicdomain/zero/1.0/>
 */
 
+// The minumum change in light sensor readings to react to
+#define LIGHT_CHANGE_THRESHOLD 99
 #define PIR_THRESHOLD 127
+
+// Wait at least this long between reported events
 #define PIR_MINIMUM_DELAY_MS 15000
 #define LIGHT_MINIMUM_DELAY_MS 30000
-#define LIGHT_MAXIMUM_REPORT_INTERVAL_MS 3600000
 
+// Report in every hour
+#define PULSE_MAXIMUM_REPORT_INTERVAL_MS 3600000
+
+// text commands that can be sent via cloud remote procedure calls
 #define HALT_MESSAGE "#halt"
 #define GO_MESSAGE "#go"
 #define QUIET_MESSAGE "#quiet"
 #define ALERTS_MESSAGE "#alert"
 
+// The range of the hand servo's motion
 #define SERVO_HALT_POSITION 20
 #define SERVO_GO_POSITION 120
 
-#define LIGHT_CHANGE_THRESHOLD 99
-
+// Hardware configuration
 const int HAND_PIN = A4;
 const int LED_PIN = D7;
 const int HALT_LED_PIN = D6;
@@ -31,11 +38,12 @@ const int PIR_PIN = A0;
 const int CDS_PIN = A1;
 const int BUZZER_PIN = D1;
 
+Servo hand;
+
 int redPressed, greenPressed, lightLevel, prevLightLevel, silence;
 
-unsigned long int motionAt, lightAt;
-
-Servo hand;
+// The timestamps of the most recent events
+unsigned long int motionAt, lightAt, pulseAt;
 
 int getLightLevel() {
     return analogRead(CDS_PIN);
@@ -66,6 +74,7 @@ void setup()
     digitalWrite(HALT_LED_PIN, LOW);
     digitalWrite(GO_LED_PIN, LOW);
     noTone(BUZZER_PIN);
+    lightAt = pulseAt = motionAt = millis();
     silence = false;
 }
 
@@ -128,10 +137,9 @@ void loop() {
             prevLightLevel = lightLevel;
         }
     }
-    if (now > (lightAt + LIGHT_MAXIMUM_REPORT_INTERVAL_MS)) {
-            lightAt = now;
-            Particle.publish("light_level",String(lightLevel));
-            prevLightLevel = lightLevel;
+    if (now > (pulseAt + PULSE_MAXIMUM_REPORT_INTERVAL_MS)) {
+            pulseAt = now;
+            Particle.publish("pulse","light: "+String(lightLevel)+" silenced: "+((silence)?"true":"false"));
     }
     if (getPir() > PIR_THRESHOLD) {
         if (now > (motionAt + PIR_MINIMUM_DELAY_MS)) {
