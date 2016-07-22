@@ -1,10 +1,10 @@
-#
-# By Raymond Blum <raymond@insanegiantrobots.com>
-# Protected by Creative Commons license 0.1
-#
-# For more information, please see
-# <http://creativecommons.org/publicdomain/zero/1.0/>
-#
+/*
+ By Raymond Blum <raymond@insanegiantrobots.com>
+ Protected by Creative Commons license 0.1
+
+ For more information, please see
+ <http://creativecommons.org/publicdomain/zero/1.0/>
+*/
 
 #define PIR_THRESHOLD 127
 #define PIR_MINIMUM_DELAY_MS 15000
@@ -13,6 +13,8 @@
 
 #define HALT_MESSAGE "#halt"
 #define GO_MESSAGE "#go"
+#define QUIET_MESSAGE "#quiet"
+#define ALERTS_MESSAGE "#alert"
 
 #define SERVO_HALT_POSITION 20
 #define SERVO_GO_POSITION 120
@@ -29,7 +31,7 @@ const int PIR_PIN = A0;
 const int CDS_PIN = A1;
 const int BUZZER_PIN = D1;
 
-int redPressed, greenPressed, lightLevel, prevLightLevel;
+int redPressed, greenPressed, lightLevel, prevLightLevel, silence;
 
 unsigned long int motionAt, lightAt;
 
@@ -64,6 +66,7 @@ void setup()
     digitalWrite(HALT_LED_PIN, LOW);
     digitalWrite(GO_LED_PIN, LOW);
     noTone(BUZZER_PIN);
+    silence = false;
 }
 
 int getPir() {
@@ -79,21 +82,41 @@ void getSms(const char *event, const char *data) {
         signalHalt();
     } else if (!strcmp(data, GO_MESSAGE)) {
         signalGo();
+    } else if (!strcmp(data, QUIET_MESSAGE)) {
+        disableAlerts();
+    } else if (!strcmp(data, ALERTS_MESSAGE)) {
+        enableAlerts();
     }
 }
 
-void signalHalt() {
-    digitalWrite(HALT_LED_PIN, HIGH);
+void disableAlerts() {
+    digitalWrite(HALT_LED_PIN, LOW);
     digitalWrite(GO_LED_PIN, LOW);
-    tone(BUZZER_PIN, 750, 500);
-    hand.write(SERVO_HALT_POSITION);
+    noTone(BUZZER_PIN);
+    hand.write(SERVO_GO_POSITION);
+    silence = true;
+}
+
+void enableAlerts() {
+    silence = false;
+}
+
+void signalHalt() {
+    if (!silence) {
+        digitalWrite(HALT_LED_PIN, HIGH);
+        digitalWrite(GO_LED_PIN, LOW);
+        tone(BUZZER_PIN, 750, 500);
+        hand.write(SERVO_HALT_POSITION);
+    }
 }
 
 void signalGo() {
-    digitalWrite(HALT_LED_PIN, LOW);
-    digitalWrite(GO_LED_PIN, HIGH);
-    tone(BUZZER_PIN, 1000, 200);
-    hand.write(SERVO_GO_POSITION);
+    if (!silence) {
+        digitalWrite(HALT_LED_PIN, LOW);
+        digitalWrite(GO_LED_PIN, HIGH);
+        tone(BUZZER_PIN, 1000, 200);
+        hand.write(SERVO_GO_POSITION);
+    }
 }
 
 void loop() {
