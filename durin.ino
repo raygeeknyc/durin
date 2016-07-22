@@ -6,7 +6,7 @@
  <http://creativecommons.org/publicdomain/zero/1.0/>
 */
 
-// The minumum change in light sensor readings to react to
+// The minumum change in sensor readings to react to
 #define LIGHT_CHANGE_THRESHOLD 99
 #define PIR_THRESHOLD 127
 
