@@ -7,7 +7,7 @@
 */
 
 // A string that the device sends when it starts up, useful to verify successful flashes
-#define VERSION_ID "V4"
+#define VERSION_ID "V6"
 
 // The minumum change in sensor readings to react to
 #define LIGHT_CHANGE_THRESHOLD 70
@@ -56,16 +56,18 @@ void setup()
 {
     hand.attach(HAND_PIN);
     pinMode(LED_PIN, OUTPUT);
-    digitalWrite(LED_PIN,LOW);
     pinMode(GO_LED_PIN, OUTPUT);
     pinMode(HALT_LED_PIN, OUTPUT);
-    digitalWrite(HALT_LED_PIN,LOW);
-    digitalWrite(GO_LED_PIN,LOW);
-    pinMode(GREEN_BUTTON_PIN,INPUT_PULLUP);
-    pinMode(RED_BUTTON_PIN,INPUT_PULLUP);
-    pinMode(BUZZER_PIN,OUTPUT);
-    Particle.publish("device_ready", VERSION_ID);
-    Particle.subscribe("reply", getSms);
+    pinMode(GREEN_BUTTON_PIN, INPUT_PULLUP);
+    pinMode(RED_BUTTON_PIN, INPUT_PULLUP);
+    pinMode(BUZZER_PIN, OUTPUT);
+    pinMode(CDS_PIN, INPUT);
+    pinMode(PIR_PIN, INPUT);
+
+    digitalWrite(LED_PIN, LOW);
+    digitalWrite(HALT_LED_PIN, LOW);
+    digitalWrite(GO_LED_PIN, LOW);
+
     redPressed = false;
     greenPressed = false;
     motionAt = 0;
@@ -79,6 +81,9 @@ void setup()
     noTone(BUZZER_PIN);
     lightAt = pulseAt = motionAt = millis();
     silence = false;
+
+    Particle.publish("device_ready", VERSION_ID);
+    Particle.subscribe("reply", getSms);
 }
 
 int getPir() {
@@ -133,28 +138,30 @@ void signalGo() {
 
 void loop() {
     unsigned long int now = millis();
+    int pir;
+    
     if (abs((lightLevel = getLightLevel()) - prevLightLevel) > LIGHT_CHANGE_THRESHOLD) {
         if (now > (lightAt + LIGHT_MINIMUM_DELAY_MS)) {
             lightAt = now;
-            Particle.publish("light_change",String(lightLevel));
+            Particle.publish("light_change", String(lightLevel));
             prevLightLevel = lightLevel;
         }
     }
     if (now > (pulseAt + PULSE_MAXIMUM_REPORT_INTERVAL_MS)) {
             pulseAt = now;
-            Particle.publish("pulse","light: "+String(lightLevel)+" silenced: "+((silence)?"true":"false"));
+            Particle.publish("pulse", "light: "+String(lightLevel)+" silenced: "+((silence)?"true":"false"));
     }
-    if (getPir() > PIR_THRESHOLD) {
+    if ((pir = getPir()) > PIR_THRESHOLD) {
         if (now > (motionAt + PIR_MINIMUM_DELAY_MS)) {
             motionAt = now;
-            Particle.publish("motion_detected");
+            Particle.publish("motion_detected", String(pir));
             signalHalt();
         }
       }
     if (digitalRead(GREEN_BUTTON_PIN) == LOW) {
         if (!greenPressed) {
             greenPressed = true;
-            Particle.publish("user_button","green");
+            Particle.publish("user_button", "green");
         }
         digitalWrite(LED_PIN, HIGH);
     } else {
@@ -163,9 +170,9 @@ void loop() {
     if (digitalRead(RED_BUTTON_PIN) == LOW) {
         if (!redPressed) {
             redPressed = true;
-            Particle.publish("user_button","red");
+            Particle.publish("user_button", "red");
         }
-        digitalWrite(LED_PIN ,HIGH);
+        digitalWrite(LED_PIN, HIGH);
     } else {
         redPressed = false;
     }
