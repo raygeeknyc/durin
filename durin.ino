@@ -6,16 +6,19 @@
  <http://creativecommons.org/publicdomain/zero/1.0/>
 */
 
+// A string that the device sends when it starts up, useful to verify successful flashes
+#define VERSION_ID "V4"
+
 // The minumum change in sensor readings to react to
-#define LIGHT_CHANGE_THRESHOLD 99
+#define LIGHT_CHANGE_THRESHOLD 70
 #define PIR_THRESHOLD 127
 
 // Wait at least this long between reported events
 #define PIR_MINIMUM_DELAY_MS 15000
 #define LIGHT_MINIMUM_DELAY_MS 30000
 
-// Report in every hour
-#define PULSE_MAXIMUM_REPORT_INTERVAL_MS 3600000
+// Report in every 30 minutes
+#define PULSE_MAXIMUM_REPORT_INTERVAL_MS 1800000
 
 // text commands that can be sent via cloud remote procedure calls
 #define HALT_MESSAGE "#halt"
@@ -61,7 +64,7 @@ void setup()
     pinMode(GREEN_BUTTON_PIN,INPUT_PULLUP);
     pinMode(RED_BUTTON_PIN,INPUT_PULLUP);
     pinMode(BUZZER_PIN,OUTPUT);
-    Particle.publish("device_ready");
+    Particle.publish("device_ready", VERSION_ID);
     Particle.subscribe("reply", getSms);
     redPressed = false;
     greenPressed = false;
