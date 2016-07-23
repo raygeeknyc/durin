@@ -7,14 +7,14 @@
 */
 
 // A string that the device sends when it starts up, useful to verify successful flashes
-#define VERSION_ID "V6"
+#define VERSION_ID "V8"
 
 // The minumum change in sensor readings to react to
 #define LIGHT_CHANGE_THRESHOLD 70
-#define PIR_THRESHOLD 127
+#define PIR_THRESHOLD 255
 
 // Wait at least this long between reported events
-#define PIR_MINIMUM_DELAY_MS 15000
+#define PIR_MINIMUM_DELAY_MS 20000
 #define LIGHT_MINIMUM_DELAY_MS 30000
 
 // Report in every 30 minutes
