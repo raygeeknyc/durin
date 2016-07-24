@@ -7,11 +7,10 @@
 */
 
 // A string that the device sends when it starts up, useful to verify successful flashes
-#define VERSION_ID "V8"
+#define VERSION_ID "V9"
 
 // The minumum change in sensor readings to react to
 #define LIGHT_CHANGE_THRESHOLD 70
-#define PIR_THRESHOLD 255
 
 // Wait at least this long between reported events
 #define PIR_MINIMUM_DELAY_MS 20000
@@ -87,11 +86,7 @@ void setup()
 }
 
 int getPir() {
-    int pir = 0;
-    for (int i=0; i<10; i++) {
-        pir = max(pir, analogRead(PIR_PIN));
-    }
-    return pir;
+    return  digitalRead(PIR_PIN);
 }
 
 void getSms(const char *event, const char *data) {
@@ -151,7 +146,7 @@ void loop() {
             pulseAt = now;
             Particle.publish("pulse", "light: "+String(lightLevel)+" silenced: "+((silence)?"true":"false"));
     }
-    if ((pir = getPir()) > PIR_THRESHOLD) {
+    if ((pir = getPir()) == HIGH) {
         if (now > (motionAt + PIR_MINIMUM_DELAY_MS)) {
             motionAt = now;
             Particle.publish("motion_detected", String(pir));
