@@ -7,7 +7,7 @@
 */
 
 // A string that the device sends when it starts up, useful to verify successful flashes
-#define VERSION_ID "V10"
+#define VERSION_ID "V11"
 
 // The minumum change in sensor readings to react to
 #define LIGHT_CHANGE_THRESHOLD 70
@@ -151,7 +151,7 @@ void loop() {
     if (now > (pulseAt + PULSE_MAXIMUM_REPORT_INTERVAL_MS)) {
             pulseAt = now;
             Particle.publish("pulse", "light: "+String(lightLevel)+" silenced: "+((silence)?"true":"false")
-                + "Light_changes: " + String(lightChangeCount) + "motions_detected: " + String(motionCount));
+                + " Light_changes: " + String(lightChangeCount) + " motions_detected: " + String(motionCount));
             lightChangeCount = 0;
             motionCount = 0;
     }
