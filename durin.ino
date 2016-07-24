@@ -7,7 +7,7 @@
 */
 
 // A string that the device sends when it starts up, useful to verify successful flashes
-#define VERSION_ID "V9"
+#define VERSION_ID "V10"
 
 // The minumum change in sensor readings to react to
 #define LIGHT_CHANGE_THRESHOLD 70
@@ -47,6 +47,9 @@ int redPressed, greenPressed, lightLevel, prevLightLevel, silence;
 // The timestamps of the most recent events
 unsigned long int motionAt, lightAt, pulseAt;
 
+// Event counts per pulse
+int motionCount, lightChangeCount;
+
 int getLightLevel() {
     return analogRead(CDS_PIN);
 }
@@ -80,6 +83,8 @@ void setup()
     noTone(BUZZER_PIN);
     lightAt = pulseAt = motionAt = millis();
     silence = false;
+    lightChangeCount = 0;
+    motionCount = 0;
 
     Particle.publish("device_ready", VERSION_ID);
     Particle.subscribe("reply", getSms);
@@ -139,17 +144,22 @@ void loop() {
         if (now > (lightAt + LIGHT_MINIMUM_DELAY_MS)) {
             lightAt = now;
             Particle.publish("light_change", String(lightLevel));
+            lightChangeCount += 1;
             prevLightLevel = lightLevel;
         }
     }
     if (now > (pulseAt + PULSE_MAXIMUM_REPORT_INTERVAL_MS)) {
             pulseAt = now;
-            Particle.publish("pulse", "light: "+String(lightLevel)+" silenced: "+((silence)?"true":"false"));
+            Particle.publish("pulse", "light: "+String(lightLevel)+" silenced: "+((silence)?"true":"false")
+                + "Light_changes: " + String(lightChangeCount) + "motions_detected: " + String(motionCount));
+            lightChangeCount = 0;
+            motionCount = 0;
     }
     if ((pir = getPir()) == HIGH) {
         if (now > (motionAt + PIR_MINIMUM_DELAY_MS)) {
             motionAt = now;
             Particle.publish("motion_detected", String(pir));
+            motionCount += 1;
             signalHalt();
         }
       }
