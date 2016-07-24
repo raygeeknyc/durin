@@ -7,7 +7,7 @@
 */
 
 // A string that the device sends when it starts up, useful to verify successful flashes
-#define VERSION_ID "V11"
+#define VERSION_ID "V12"
 
 // The minumum change in sensor readings to react to
 #define LIGHT_CHANGE_THRESHOLD 70
@@ -15,6 +15,9 @@
 // Wait at least this long between reported events
 #define PIR_MINIMUM_DELAY_MS 20000
 #define LIGHT_MINIMUM_DELAY_MS 30000
+
+// Only consider motion events that happen within this time period of another
+#define MOTION_CONSECUTIVE_EVENTS_INTERVAL_MS 1500
 
 // Report in every 30 minutes
 #define PULSE_MAXIMUM_REPORT_INTERVAL_MS 1800000
@@ -45,7 +48,7 @@ Servo hand;
 int redPressed, greenPressed, lightLevel, prevLightLevel, silence;
 
 // The timestamps of the most recent events
-unsigned long int motionAt, lightAt, pulseAt;
+unsigned long int motionAt, lightAt, pulseAt, pirAt;
 
 // Event counts per pulse
 int motionCount, lightChangeCount;
@@ -91,7 +94,13 @@ void setup()
 }
 
 int getPir() {
-    return  digitalRead(PIR_PIN);
+    int motion = false;
+    int pir = digitalRead(PIR_PIN);
+    if (pir) {
+        motion = (millis() <= pirAt + MOTION_CONSECUTIVE_EVENTS_INTERVAL_MS);
+        pirAt = millis();
+    }
+    return motion;
 }
 
 void getSms(const char *event, const char *data) {
