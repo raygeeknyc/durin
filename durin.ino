@@ -7,7 +7,7 @@
 */
 
 // A string that the device sends when it starts up, useful to verify successful flashes
-#define VERSION_ID "V12"
+#define VERSION_ID "V14"
 
 // The minumum change in sensor readings to react to
 #define LIGHT_CHANGE_THRESHOLD 70
@@ -17,7 +17,7 @@
 #define LIGHT_MINIMUM_DELAY_MS 30000
 
 // Only consider motion events that happen within this time period of another
-#define MOTION_CONSECUTIVE_EVENTS_INTERVAL_MS 1500
+#define MOTION_CONSECUTIVE_EVENTS_INTERVAL_MS 3000
 
 // Report in every 30 minutes
 #define PULSE_MAXIMUM_REPORT_INTERVAL_MS 1800000
@@ -45,7 +45,7 @@ const int BUZZER_PIN = D1;
 
 Servo hand;
 
-int redPressed, greenPressed, lightLevel, prevLightLevel, silence;
+int redPressed, greenPressed, lightLevel, prevLightLevel, silence, lastPir;
 
 // The timestamps of the most recent events
 unsigned long int motionAt, lightAt, pulseAt, pirAt;
@@ -96,10 +96,11 @@ void setup()
 int getPir() {
     int motion = false;
     int pir = digitalRead(PIR_PIN);
-    if (pir) {
+    if ((lastPir != pir) && pir) {
         motion = (millis() <= pirAt + MOTION_CONSECUTIVE_EVENTS_INTERVAL_MS);
         pirAt = millis();
     }
+    lastPir = pir;
     return motion;
 }
 
