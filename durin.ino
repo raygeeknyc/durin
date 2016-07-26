@@ -7,7 +7,7 @@
 */
 
 // A string that the device sends when it starts up, useful to verify successful flashes
-#define VERSION_ID "V14"
+#define VERSION_ID "V18"
 
 // The minumum change in sensor readings to react to
 #define LIGHT_CHANGE_THRESHOLD 70
@@ -27,6 +27,7 @@
 #define GO_MESSAGE "#go"
 #define QUIET_MESSAGE "#quiet"
 #define ALERTS_MESSAGE "#alert"
+#define STATUS_MESSAGE "#status"
 
 // The range of the hand servo's motion
 #define SERVO_HALT_POSITION 20
@@ -45,7 +46,7 @@ const int BUZZER_PIN = D1;
 
 Servo hand;
 
-int redPressed, greenPressed, lightLevel, prevLightLevel, silence, lastPir;
+int redPressed, greenPressed, lightLevel, prevLightLevel, silence;
 
 // The timestamps of the most recent events
 unsigned long int motionAt, lightAt, pulseAt, pirAt;
@@ -96,11 +97,10 @@ void setup()
 int getPir() {
     int motion = false;
     int pir = digitalRead(PIR_PIN);
-    if ((lastPir != pir) && pir) {
+    if (pir) {
         motion = (millis() <= pirAt + MOTION_CONSECUTIVE_EVENTS_INTERVAL_MS);
         pirAt = millis();
     }
-    lastPir = pir;
     return motion;
 }
 
@@ -113,6 +113,8 @@ void getSms(const char *event, const char *data) {
         disableAlerts();
     } else if (!strcmp(data, ALERTS_MESSAGE)) {
         enableAlerts();
+    } else if (!strcmp(data, STATUS_MESSAGE)) {
+        sendPulse();
     }
 }
 
@@ -146,6 +148,12 @@ void signalGo() {
     }
 }
 
+void sendPulse() {
+    int mins = (millis() - pulseAt) / 1000 / 60;
+    Particle.publish("pulse", "{" + String("for_minutes:")+String(mins)+",light:"+String(lightLevel)+",silenced:"+String((silence)?"true":"false")
+        +",light_changes:"+String(lightChangeCount)+",motions_detected:"+String(motionCount)+"}");
+}
+
 void loop() {
     unsigned long int now = millis();
     int pir;
@@ -159,9 +167,8 @@ void loop() {
         }
     }
     if (now > (pulseAt + PULSE_MAXIMUM_REPORT_INTERVAL_MS)) {
+            sendPulse();
             pulseAt = now;
-            Particle.publish("pulse", "light: "+String(lightLevel)+" silenced: "+((silence)?"true":"false")
-                + " Light_changes: " + String(lightChangeCount) + " motions_detected: " + String(motionCount));
             lightChangeCount = 0;
             motionCount = 0;
     }
