@@ -7,7 +7,7 @@
 */
 
 // A string that the device sends when it starts up, useful to verify successful flashes
-#define VERSION_ID "V18"
+#define VERSION_ID "V20"
 
 // The minumum change in sensor readings to react to
 #define LIGHT_CHANGE_THRESHOLD 70
@@ -27,7 +27,7 @@
 #define GO_MESSAGE "#go"
 #define QUIET_MESSAGE "#quiet"
 #define ALERTS_MESSAGE "#alert"
-#define STATUS_MESSAGE "#status"
+#define STATUS_MESSAGE "#status?"
 
 // The range of the hand servo's motion
 #define SERVO_HALT_POSITION 20
@@ -114,7 +114,7 @@ void getSms(const char *event, const char *data) {
     } else if (!strcmp(data, ALERTS_MESSAGE)) {
         enableAlerts();
     } else if (!strcmp(data, STATUS_MESSAGE)) {
-        sendPulse();
+        sendPulse(true);
     }
 }
 
@@ -148,9 +148,9 @@ void signalGo() {
     }
 }
 
-void sendPulse() {
+void sendPulse(bool sendMessage) {
     int mins = (millis() - pulseAt) / 1000 / 60;
-    Particle.publish("pulse", "{" + String("for_minutes:")+String(mins)+",light:"+String(lightLevel)+",silenced:"+String((silence)?"true":"false")
+    Particle.publish((sendMessage?"pulse_notify":"pulse"), "{" + String("for_minutes:")+String(mins)+",light:"+String(lightLevel)+",silenced:"+String((silence)?"true":"false")
         +",light_changes:"+String(lightChangeCount)+",motions_detected:"+String(motionCount)+"}");
 }
 
@@ -167,7 +167,7 @@ void loop() {
         }
     }
     if (now > (pulseAt + PULSE_MAXIMUM_REPORT_INTERVAL_MS)) {
-            sendPulse();
+            sendPulse(false);
             pulseAt = now;
             lightChangeCount = 0;
             motionCount = 0;
